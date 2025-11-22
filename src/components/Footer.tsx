@@ -9,7 +9,7 @@ const Footer = () => {
         <div className="flex flex-col md:flex-row justify-between items-center gap-4">
           <div className="flex items-center gap-2">
             <Lightbulb className="h-5 w-5 text-venture-accent" />
-            <span className="font-bold">VentureBloom</span>
+            <span className="font-bold">BusinessBud</span>
           </div>
           
           <div className="flex gap-8">
@@ -25,7 +25,7 @@ const Footer = () => {
           </div>
           
           <div className="text-sm text-muted-foreground">
-            © {new Date().getFullYear()} VentureBloom. All rights reserved.
+            © {new Date().getFullYear()} BusinessBud. All rights reserved.
           </div>
         </div>
       </div>

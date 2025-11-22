@@ -41,7 +41,7 @@ const Navbar = ({ toggleSidebar }: NavbarProps) => {
           )}
           <Link to="/" className="flex items-center gap-2">
             <Lightbulb className="h-6 w-6 text-venture-accent" />
-            <span className="font-bold text-xl">VentureBloom</span>
+            <span className="font-bold text-xl">BusinessBud</span>
           </Link>
         </div>
         

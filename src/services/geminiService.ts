@@ -34,8 +34,7 @@ export interface AnalysisResponse {
 
 const API_ENDPOINT = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent";
 
-// Add your API key here or load it from environment variables
-// IMPORTANT: Replace this with your actual Gemini API key
+
 const API_KEY = "API-KEY"; // <-- Replace with your API key
 
 export const generateBusinessAnalysis = async (idea: BusinessIdea): Promise<AnalysisResponse> => {

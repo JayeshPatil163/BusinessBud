@@ -618,7 +618,7 @@ const closeCampaignDetails = () => {
                     <CartesianGrid strokeDasharray="3 3" strokeOpacity={0.2} />
                     <XAxis dataKey="month" />
                     <YAxis />
-                    <Tooltip content={<CustomTooltip />} />
+                    <Tooltip content={(props) => <CustomTooltip {...props} />} />
                     <Area 
                       type="monotone" 
                       dataKey="target" 

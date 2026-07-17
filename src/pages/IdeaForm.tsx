@@ -20,7 +20,7 @@ import { useNavigate } from "react-router-dom";
 import * as z from "zod";
 import Footer from "@/components/Footer";
 import Navbar from "@/components/Navbar";
-import { generateBusinessAnalysis } from "@/services/geminiService";
+import { generateBusinessAnalysis } from "@/services/grokService";
 
 const formSchema = z.object({
   title: z.string().min(2, {
@@ -82,7 +82,7 @@ const IdeaForm = () => {
         description: "This may take a moment.",
       });
 
-      // Generate analysis using Gemini API
+      // Generate analysis using Grok API
       const analysis = await generateBusinessAnalysis(businessIdea);
       
       // Store both the idea and analysis in sessionStorage

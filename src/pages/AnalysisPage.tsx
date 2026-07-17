@@ -6,7 +6,7 @@ import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/use-toast";
 import { ArrowRightIcon, Check, X, Users, TrendingUp, Zap, Target, BadgeCheck, BarChart3, Clock } from "lucide-react";
-import { type AnalysisResponse } from "@/services/geminiService";
+import { type AnalysisResponse } from "@/services/grokService";
 
 const AnalysisPage = () => {
   const navigate = useNavigate();

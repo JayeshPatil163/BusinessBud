@@ -1,266 +1,386 @@
-
-import { Button } from "@/components/ui/button";
-import {
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { toast } from "@/components/ui/use-toast";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { ArrowRightIcon, Lightbulb } from "lucide-react";
 import React, { useState } from "react";
-import { useForm } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
-import * as z from "zod";
+import { toast } from "@/components/ui/use-toast";
+import { ArrowRight, Lightbulb, Target, Users, Zap, BarChart3 } from "lucide-react";
 import Footer from "@/components/Footer";
 import Navbar from "@/components/Navbar";
 import { generateBusinessAnalysis } from "@/services/grokService";
+import * as z from "zod";
 
 const formSchema = z.object({
-  title: z.string().min(2, {
-    message: "Title must be at least 2 characters.",
-  }),
-  description: z.string().min(10, {
-    message: "Description must be at least 10 characters.",
-  }),
-  industry: z.string().min(3, {
-    message: "Industry must be at least 3 characters.",
-  }),
-  targetAudience: z.string().min(10, {
-    message: "Target audience description must be at least 10 characters.",
-  }),
-  uniqueSelling: z.string().min(10, {
-    message: "Unique selling proposition must be at least 10 characters.",
-  }),
+  title:         z.string().min(2, "At least 2 characters."),
+  description:   z.string().min(10, "At least 10 characters."),
+  industry:      z.string().min(3, "At least 3 characters."),
+  targetAudience:z.string().min(10, "At least 10 characters."),
+  uniqueSelling: z.string().min(10, "At least 10 characters."),
 });
 
+type FormValues = z.infer<typeof formSchema>;
+
+const STEPS = [
+  { id: "title",          label: "Idea Name",      icon: Lightbulb,  placeholder: "e.g. AI-Powered Tutoring Platform" },
+  { id: "description",    label: "Description",     icon: Zap,        placeholder: "Describe your idea — the problem you solve and how.", textarea: true },
+  { id: "industry",       label: "Industry",        icon: BarChart3,  placeholder: "e.g. Education, Healthcare, FinTech" },
+  { id: "targetAudience", label: "Target Audience", icon: Users,      placeholder: "Who is your ideal customer? Describe them vividly.", textarea: true },
+  { id: "uniqueSelling",  label: "Your Edge",       icon: Target,     placeholder: "What makes this genuinely different from everything else?", textarea: true },
+];
+
 const IdeaForm = () => {
+  const [values, setValues]         = useState<Partial<FormValues>>({});
+  const [errors, setErrors]         = useState<Partial<Record<keyof FormValues, string>>>({});
+  const [activeStep, setActiveStep] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const navigate = useNavigate();
 
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      title: "",
-      description: "",
-      industry: "",
-      targetAudience: "",
-      uniqueSelling: "",
-    },
-  });
+  const updateValue = (key: keyof FormValues, val: string) => {
+    setValues((p) => ({ ...p, [key]: val }));
+    if (errors[key]) setErrors((p) => ({ ...p, [key]: undefined }));
+  };
 
-  // Remove the duplicate handleSubmit function and use formSubmit
-  const formSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSubmitting(true);
-    
+  const validate = (): boolean => {
     try {
-      const formData = new FormData(e.target as HTMLFormElement);
-      const title = formData.get("title") as string;
-      const description = formData.get("description") as string;
-      const industry = formData.get("industry") as string;
-      const targetAudience = formData.get("targetAudience") as string;
-      const uniqueSelling = formData.get("uniqueSelling") as string;
-
-      const businessIdea = {
-        title,
-        description,
-        industry,
-        targetAudience,
-        uniqueSelling
-      };
-
-      // Show loading toast
-      toast({
-        title: "Analyzing your idea...",
-        description: "This may take a moment.",
-      });
-
-      // Generate analysis using Grok API
-      const analysis = await generateBusinessAnalysis(businessIdea);
-      
-      // Store both the idea and analysis in sessionStorage
-      sessionStorage.setItem("businessIdea", JSON.stringify(businessIdea));
-      sessionStorage.setItem("businessAnalysis", JSON.stringify(analysis));
-      
-      // Show success toast and redirect
-      toast({
-        title: "Analysis complete!",
-        description: "Redirecting to results...",
-      });
-      
-      // Navigate to analysis page
-      navigate("/analysis");
-    } catch (error) {
-      console.error("Error submitting idea:", error);
-      setIsSubmitting(false);
-      toast({
-        variant: "destructive",
-        title: "Analysis failed",
-        description: "Please try again later.",
-      });
+      formSchema.parse(values);
+      return true;
+    } catch (err: any) {
+      const e: Partial<Record<keyof FormValues, string>> = {};
+      err.errors?.forEach((x: any) => { if (x.path[0]) e[x.path[0] as keyof FormValues] = x.message; });
+      setErrors(e);
+      const firstErr = STEPS.findIndex((s) => e[s.id as keyof FormValues]);
+      if (firstErr !== -1) setActiveStep(firstErr);
+      return false;
     }
   };
 
+  const handleSubmit = async (ev: React.FormEvent) => {
+    ev.preventDefault();
+    if (!validate()) return;
+    setIsSubmitting(true);
+    try {
+      const idea = {
+        title:         values.title!,
+        description:   values.description!,
+        industry:      values.industry!,
+        targetAudience:values.targetAudience!,
+        uniqueSelling: values.uniqueSelling!,
+      };
+      toast({ title: "Analyzing your idea…", description: "This takes about a minute." });
+      const analysis = await generateBusinessAnalysis(idea);
+      sessionStorage.setItem("businessIdea",     JSON.stringify(idea));
+      sessionStorage.setItem("businessAnalysis", JSON.stringify(analysis));
+      toast({ title: "Analysis complete!", description: "Redirecting…" });
+      navigate("/analysis");
+    } catch {
+      setIsSubmitting(false);
+      toast({ variant: "destructive", title: "Analysis failed", description: "Please try again." });
+    }
+  };
+
+  const filledCount = STEPS.filter((s) => values[s.id as keyof FormValues]).length;
+
   return (
-    <div className="min-h-screen flex flex-col gradient-bg">
+    <div className="min-h-screen flex flex-col" style={{ background: "var(--cream)" }}>
       <Navbar />
-      <div className="flex-1 pt-24 pb-12 px-4">
-        <div className="max-w-3xl mx-auto">
-          <div className="text-center mb-8 animate-fade-in">
-            <div className="inline-flex items-center px-3 py-1 rounded-full bg-venture-light dark:bg-venture-accent/20 text-venture-accent mb-4">
-              <Lightbulb className="w-4 h-4 mr-2" />
-              <span className="text-sm font-medium">Step 1: Share Your Idea</span>
-            </div>
-            <h1 className="text-3xl md:text-4xl font-bold mb-4">
-              Let's Bring Your Vision to Life
+
+      <div className="flex-1 pt-28 pb-20 px-6">
+        <div className="max-w-2xl mx-auto">
+
+          {/* Header */}
+          <div className="text-center mb-12 animate-fade-up">
+            <span className="chip mb-5 inline-flex">
+              <span className="w-1.5 h-1.5 rounded-full" style={{ background: "var(--ink)", display: "inline-block" }} />
+              Step 1 of 2
+            </span>
+            <h1
+              style={{
+                fontFamily: "'Playfair Display', Georgia, serif",
+                fontWeight: 700,
+                fontSize: "clamp(2.4rem, 6vw, 4rem)",
+                letterSpacing: "-0.02em",
+                color: "var(--ink)",
+                lineHeight: 1.0,
+                marginBottom: "1rem",
+              }}
+            >
+              Tell us about{" "}
+              <em style={{ fontStyle: "italic", fontWeight: 800, color: "var(--ink-2)" }}>
+                your idea.
+              </em>
             </h1>
-            <p className="text-muted-foreground max-w-xl mx-auto">
-              Describe your business idea in detail to receive a comprehensive
-              analysis and roadmap for execution.
+            <p
+              style={{
+                fontFamily: "'Inter', sans-serif",
+                fontSize: "14px",
+                fontWeight: 300,
+                color: "var(--text-2)",
+                lineHeight: 1.65,
+              }}
+            >
+              The more you share, the sharper the analysis.
             </p>
           </div>
 
-          <Form {...form}>
-            <form
-              onSubmit={formSubmit}
-              className="space-y-8 animate-fade-in"
-            >
-              <FormField
-                control={form.control}
-                name="title"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Title</FormLabel>
-                    <FormControl>
-                      <Input placeholder="e.g. AI-Powered Tutoring Platform" {...field} />
-                    </FormControl>
-                    <FormDescription>
-                      What is the name of your business idea?
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="description"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Description</FormLabel>
-                    <FormControl>
-                      <Textarea
-                        placeholder="Describe your business idea in detail"
-                        className="resize-none"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormDescription>
-                      Provide a detailed explanation of your business idea,
-                      including the problem it solves and the solution it
-                      offers.
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="industry"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Industry</FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder="e.g. Education, Healthcare, Finance"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormDescription>
-                      Which industry does your business idea belong to?
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="targetAudience"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Target Audience</FormLabel>
-                    <FormControl>
-                      <Textarea
-                        placeholder="Describe your ideal customer"
-                        className="resize-none"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormDescription>
-                      Who is your ideal customer? Describe their demographics,
-                      needs, and pain points.
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="uniqueSelling"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Unique Selling Proposition</FormLabel>
-                    <FormControl>
-                      <Textarea
-                        placeholder="What makes your idea different?"
-                        className="resize-none"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormDescription>
-                      What makes your business idea unique and different from
-                      existing solutions?
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <Button disabled={isSubmitting} type="submit" className="w-full bg-venture-accent hover:bg-venture-accent/90 text-white">
-                {isSubmitting && (
-                  <svg
-                    className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
+          {/* Step cards */}
+          <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+            {STEPS.map((step, idx) => {
+              const Icon      = step.icon;
+              const key       = step.id as keyof FormValues;
+              const isFocused = activeStep === idx;
+              const hasValue  = !!values[key];
+              const hasError  = !!errors[key];
+
+              return (
+                <div
+                  key={step.id}
+                  onClick={() => setActiveStep(idx)}
+                  style={{
+                    background: "rgba(255,255,255,0.78)",
+                    backdropFilter: "blur(16px)",
+                    WebkitBackdropFilter: "blur(16px)",
+                    border: hasError
+                      ? "1px solid rgba(220,60,60,0.3)"
+                      : isFocused
+                      ? "1px solid rgba(0,0,0,0.18)"
+                      : "1px solid rgba(255,255,255,0.92)",
+                    borderRadius: "24px",
+                    boxShadow: isFocused
+                      ? "0 8px 32px rgba(0,0,0,0.06), 0 1px 3px rgba(0,0,0,0.04)"
+                      : "0 1px 3px rgba(0,0,0,0.03)",
+                    cursor: "pointer",
+                    transition: "all 0.25s ease",
+                    overflow: "hidden",
+                  }}
+                >
+                  {/* Card header row */}
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "14px",
+                      padding: isFocused ? "22px 24px 16px" : "18px 24px",
+                    }}
                   >
-                    <circle
-                      className="opacity-25"
-                      cx="12"
-                      cy="12"
-                      r="10"
-                      stroke="currentColor"
-                      strokeWidth="4"
-                    ></circle>
-                    <path
-                      className="opacity-75"
-                      fill="currentColor"
-                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                    ></path>
+                    <div
+                      style={{
+                        width: "36px",
+                        height: "36px",
+                        borderRadius: "12px",
+                        background: isFocused ? "var(--ink)" : "rgba(0,0,0,0.05)",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        flexShrink: 0,
+                        transition: "background 0.25s",
+                      }}
+                    >
+                      <Icon
+                        size={15}
+                        style={{
+                          color: isFocused ? "#fff" : "rgba(0,0,0,0.35)",
+                          transition: "color 0.25s",
+                        }}
+                      />
+                    </div>
+
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <p
+                        style={{
+                          fontFamily: "'Inter', sans-serif",
+                          fontSize: "10.5px",
+                          fontWeight: 500,
+                          letterSpacing: "0.09em",
+                          textTransform: "uppercase",
+                          color: isFocused ? "var(--text-1)" : "var(--text-3)",
+                          transition: "color 0.25s",
+                          marginBottom: hasValue && !isFocused ? "3px" : "0",
+                        }}
+                      >
+                        {String(idx + 1).padStart(2, "0")} — {step.label}
+                      </p>
+                      {/* Collapsed preview */}
+                      {hasValue && !isFocused && (
+                        <p
+                          style={{
+                            fontFamily: "'Inter', sans-serif",
+                            fontSize: "13px",
+                            fontWeight: 400,
+                            color: "var(--text-2)",
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                            whiteSpace: "nowrap",
+                          }}
+                        >
+                          {values[key]}
+                        </p>
+                      )}
+                    </div>
+
+                    {/* Completion dot */}
+                    {hasValue && !isFocused && (
+                      <div
+                        style={{
+                          width: "7px",
+                          height: "7px",
+                          borderRadius: "50%",
+                          background: "var(--ink)",
+                          flexShrink: 0,
+                        }}
+                      />
+                    )}
+                  </div>
+
+                  {/* Expanded input */}
+                  {isFocused && (
+                    <div style={{ padding: "0 24px 22px" }}>
+                      {step.textarea ? (
+                        <textarea
+                          autoFocus
+                          value={values[key] || ""}
+                          onChange={(e) => updateValue(key, e.target.value)}
+                          placeholder={step.placeholder}
+                          rows={4}
+                          style={{
+                            width: "100%",
+                            background: "transparent",
+                            border: "none",
+                            outline: "none",
+                            fontFamily: "'Inter', sans-serif",
+                            fontSize: "14px",
+                            fontWeight: 300,
+                            color: "var(--text-1)",
+                            lineHeight: 1.65,
+                            resize: "vertical",
+                            minHeight: "90px",
+                          }}
+                          // @ts-ignore
+                          placeholder-style={{ color: "var(--text-3)" }}
+                        />
+                      ) : (
+                        <input
+                          autoFocus
+                          type="text"
+                          value={values[key] || ""}
+                          onChange={(e) => updateValue(key, e.target.value)}
+                          placeholder={step.placeholder}
+                          style={{
+                            width: "100%",
+                            background: "transparent",
+                            border: "none",
+                            outline: "none",
+                            fontFamily: "'Inter', sans-serif",
+                            fontSize: "14px",
+                            fontWeight: 300,
+                            color: "var(--text-1)",
+                          }}
+                        />
+                      )}
+                      {hasError && (
+                        <p
+                          style={{
+                            fontFamily: "'Inter', sans-serif",
+                            fontSize: "12px",
+                            color: "rgba(200,50,50,0.85)",
+                            marginTop: "8px",
+                            fontWeight: 400,
+                          }}
+                        >
+                          {errors[key]}
+                        </p>
+                      )}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+
+            {/* Progress */}
+            <div style={{ paddingTop: "8px" }}>
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  marginBottom: "8px",
+                }}
+              >
+                <span style={{ fontFamily: "'Inter', sans-serif", fontSize: "12px", fontWeight: 300, color: "var(--text-3)" }}>
+                  {filledCount} / {STEPS.length} fields
+                </span>
+                <span style={{ fontFamily: "'Inter', sans-serif", fontSize: "12px", fontWeight: 300, color: "var(--text-3)" }}>
+                  {Math.round((filledCount / STEPS.length) * 100)}%
+                </span>
+              </div>
+              <div
+                style={{
+                  height: "2px",
+                  borderRadius: "100px",
+                  background: "rgba(0,0,0,0.07)",
+                  overflow: "hidden",
+                }}
+              >
+                <div
+                  style={{
+                    height: "100%",
+                    borderRadius: "100px",
+                    background: "var(--ink)",
+                    width: `${(filledCount / STEPS.length) * 100}%`,
+                    transition: "width 0.4s cubic-bezier(0.16,1,0.3,1)",
+                  }}
+                />
+              </div>
+            </div>
+
+            {/* Submit */}
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              style={{
+                marginTop: "4px",
+                width: "100%",
+                padding: "15px",
+                borderRadius: "20px",
+                background: "var(--ink)",
+                color: "#fff",
+                fontFamily: "'Inter', sans-serif",
+                fontSize: "14px",
+                fontWeight: 500,
+                border: "none",
+                cursor: isSubmitting ? "not-allowed" : "pointer",
+                opacity: isSubmitting ? 0.7 : 1,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: "8px",
+                transition: "all 0.2s",
+              }}
+              onMouseEnter={(e) => {
+                if (!isSubmitting) {
+                  (e.currentTarget as HTMLButtonElement).style.transform = "translateY(-1px)";
+                  (e.currentTarget as HTMLButtonElement).style.boxShadow = "0 8px 28px rgba(0,0,0,0.18)";
+                }
+              }}
+              onMouseLeave={(e) => {
+                (e.currentTarget as HTMLButtonElement).style.transform = "translateY(0)";
+                (e.currentTarget as HTMLButtonElement).style.boxShadow = "none";
+              }}
+            >
+              {isSubmitting ? (
+                <>
+                  <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none">
+                    <circle cx="12" cy="12" r="10" stroke="rgba(255,255,255,0.3)" strokeWidth="3" />
+                    <path d="M12 2a10 10 0 0 1 10 10" stroke="white" strokeWidth="3" strokeLinecap="round" />
                   </svg>
-                )}
-                Analyze My Idea
-                <ArrowRightIcon className="ml-2 h-4 w-4" />
-              </Button>
-            </form>
-          </Form>
+                  Analyzing…
+                </>
+              ) : (
+                <>
+                  Analyze My Idea
+                  <ArrowRight size={15} />
+                </>
+              )}
+            </button>
+          </form>
         </div>
       </div>
+
       <Footer />
     </div>
   );

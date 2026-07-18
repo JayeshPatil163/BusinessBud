@@ -1,297 +1,359 @@
-
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/use-toast";
-import { ArrowRightIcon, Check, X, Users, TrendingUp, Zap, Target, BadgeCheck, BarChart3, Clock } from "lucide-react";
+import { Check, X, ArrowRight, Users, TrendingUp, Clock, BarChart3, BadgeCheck, Target } from "lucide-react";
 import { type AnalysisResponse } from "@/services/grokService";
 
+/* ── Reusable card ── */
+const AnalysisCard = ({
+  children,
+  style = {},
+}: {
+  children: React.ReactNode;
+  style?: React.CSSProperties;
+}) => (
+  <div
+    className="glass-card"
+    style={{ ...style }}
+  >
+    {children}
+  </div>
+);
+
+const SectionTitle = ({
+  icon: Icon,
+  label,
+  title,
+}: {
+  icon: React.ElementType;
+  label: string;
+  title: string;
+}) => (
+  <div style={{ display: "flex", alignItems: "center", gap: "14px", marginBottom: "22px" }}>
+    <div
+      style={{
+        width: "38px",
+        height: "38px",
+        borderRadius: "14px",
+        background: "rgba(0,0,0,0.05)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        flexShrink: 0,
+      }}
+    >
+      <Icon size={16} style={{ color: "var(--ink-2)" }} />
+    </div>
+    <div>
+      <p style={{ fontFamily: "'Inter', sans-serif", fontSize: "10.5px", fontWeight: 500, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--text-3)", marginBottom: "2px" }}>
+        {label}
+      </p>
+      <h2 style={{ fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 700, fontSize: "1.15rem", color: "var(--ink)", letterSpacing: "-0.02em", fontOpticalSizing: "auto" }}>
+        {title}
+      </h2>
+    </div>
+  </div>
+);
+
+/* ── Main ── */
 const AnalysisPage = () => {
   const navigate = useNavigate();
-  const [loading, setLoading] = useState(true);
-  const [businessIdea, setBusinessIdea] = useState<any>(null);
-  const [analysis, setAnalysis] = useState<AnalysisResponse | null>(null);
-  const [currentPhase, setCurrentPhase] = useState(0);
+  const [loading, setLoading]         = useState(true);
+  const [businessIdea, setIdea]       = useState<any>(null);
+  const [analysis, setAnalysis]       = useState<AnalysisResponse | null>(null);
+  const [openPhase, setOpenPhase]     = useState(0);
 
   useEffect(() => {
-    // Load business idea and analysis from session storage
-    const loadData = () => {
-      try {
-        const ideaData = sessionStorage.getItem("businessIdea");
-        const analysisData = sessionStorage.getItem("businessAnalysis");
-        
-        if (!ideaData) {
-          toast({
-            variant: "destructive",
-            title: "No idea found",
-            description: "Please submit an idea first.",
-          });
-          navigate("/start");
-          return;
-        }
-        
-        setBusinessIdea(JSON.parse(ideaData));
-        
-        if (analysisData) {
-          setAnalysis(JSON.parse(analysisData));
-        }
-        
-        setLoading(false);
-      } catch (error) {
-        console.error("Error loading data:", error);
-        toast({
-          variant: "destructive",
-          title: "Error loading data",
-          description: "Please try again.",
-        });
+    try {
+      const ideaRaw     = sessionStorage.getItem("businessIdea");
+      const analysisRaw = sessionStorage.getItem("businessAnalysis");
+      if (!ideaRaw) {
+        toast({ variant: "destructive", title: "No idea found", description: "Submit one first." });
         navigate("/start");
+        return;
       }
-    };
-    
-    loadData();
+      setIdea(JSON.parse(ideaRaw));
+      if (analysisRaw) setAnalysis(JSON.parse(analysisRaw));
+      setLoading(false);
+    } catch {
+      toast({ variant: "destructive", title: "Error loading data" });
+      navigate("/start");
+    }
   }, [navigate]);
 
-  const handleContinue = () => {
-    navigate("/results");
-  };
-
+  /* ── Loading ── */
   if (loading) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-black text-white">
-        <div className="flex flex-col items-center space-y-4">
-          <div className="relative">
-            <div className="h-16 w-16 rounded-full border-4 border-t-white border-r-transparent border-b-transparent border-l-transparent animate-spin"></div>
-          </div>
-          <p className="text-lg font-medium">Analyzing your idea...</p>
+      <div className="min-h-screen flex items-center justify-center" style={{ background: "var(--cream)" }}>
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "20px" }}>
+          <div
+            style={{
+              width: "48px",
+              height: "48px",
+              borderRadius: "50%",
+              border: "2px solid rgba(0,0,0,0.08)",
+              borderTopColor: "var(--ink)",
+              animation: "spin 0.9s linear infinite",
+            }}
+          />
+          <p style={{ fontFamily: "'Inter', sans-serif", fontSize: "13px", fontWeight: 300, color: "var(--text-2)" }}>
+            Loading analysis…
+          </p>
         </div>
+        <style>{`@keyframes spin { to { transform: rotate(360deg) } }`}</style>
       </div>
     );
   }
 
   if (!businessIdea || !analysis) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-black text-white">
-        <div className="text-center p-8 rounded-lg">
-          <p className="text-xl mb-4">No analysis data found</p>
-          <Button onClick={() => navigate("/start")} className="bg-white text-black hover:bg-gray-200">
-            Submit an idea
-          </Button>
+      <div className="min-h-screen flex items-center justify-center" style={{ background: "var(--cream)" }}>
+        <div style={{ textAlign: "center" }}>
+          <p style={{ fontFamily: "'Inter', sans-serif", color: "var(--text-2)", marginBottom: "16px" }}>No analysis data found.</p>
+          <button onClick={() => navigate("/start")} className="btn-dark">Submit an idea</button>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-black text-white">
+    <div className="min-h-screen flex flex-col" style={{ background: "var(--cream)" }}>
       <Navbar />
-      <div className="flex-1 pt-24 pb-12 px-4">
-        <div className="max-w-5xl mx-auto">
-          <div className="text-center mb-12">
-            <div className="inline-flex items-center px-3 py-1 rounded-full bg-gray-800 text-white mb-4">
-              <Zap className="w-4 h-4 mr-2" />
-              <span className="text-sm font-medium">Analysis Complete</span>
-            </div>
-            <h1 className="text-3xl md:text-4xl font-bold mb-4">
-              Business Idea Analysis
+
+      <div className="flex-1 pt-28 pb-20 px-6">
+        <div className="max-w-3xl mx-auto">
+
+          {/* ── Page header ── */}
+          <div className="text-center mb-12 animate-fade-up">
+            <span className="chip mb-5 inline-flex">
+              <span className="w-1.5 h-1.5 rounded-full" style={{ background: "var(--ink)", display: "inline-block" }} />
+              Analysis Complete
+            </span>
+            <h1
+              style={{
+                fontFamily: "'Playfair Display', Georgia, serif",
+                fontWeight: 800,
+                fontSize: "clamp(2rem, 5vw, 3.2rem)",
+                letterSpacing: "-0.04em",
+                color: "var(--ink)",
+                lineHeight: 1.0,
+                marginBottom: "0.5rem",
+                
+              }}
+            >
+              {businessIdea.title}
             </h1>
-            <p className="text-gray-400 max-w-xl mx-auto">
-              We've analyzed your {businessIdea.industry} business concept "{businessIdea.title}" 
-              and identified key insights to help you move forward.
+            <p style={{ fontFamily: "'Inter', sans-serif", fontSize: "13px", fontWeight: 300, color: "var(--text-3)" }}>
+              {businessIdea.industry} · AI-powered analysis
             </p>
           </div>
 
-          <div className="space-y-12">
-            {/* Strengths & Weaknesses */}
-            <div className="bg-gray-900 rounded-xl p-6 shadow-lg">
-              <h2 className="text-2xl font-bold mb-6 flex items-center">
-                <BadgeCheck className="w-6 h-6 mr-2 text-green-500" />
-                Strengths & Weaknesses Analysis
-              </h2>
-              <div className="grid md:grid-cols-2 gap-6">
-                <div className="bg-gray-800 rounded-lg p-5">
-                  <h3 className="text-xl font-semibold mb-4 text-green-400 flex items-center">
-                    <Check className="w-5 h-5 mr-2" />
-                    Strengths
-                  </h3>
-                  <ul className="space-y-3">
-                    {analysis.strengthsWeaknesses.strengths.map((strength, idx) => (
-                      <li key={idx} className="flex items-start">
-                        <span className="flex-shrink-0 w-5 h-5 rounded-full bg-green-500/20 flex items-center justify-center mr-3 mt-1">
-                          <Check className="w-3 h-3 text-green-500" />
-                        </span>
-                        <span>{strength}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-                <div className="bg-gray-800 rounded-lg p-5">
-                  <h3 className="text-xl font-semibold mb-4 text-red-400 flex items-center">
-                    <X className="w-5 h-5 mr-2" />
-                    Weaknesses
-                  </h3>
-                  <ul className="space-y-3">
-                    {analysis.strengthsWeaknesses.weaknesses.map((weakness, idx) => (
-                      <li key={idx} className="flex items-start">
-                        <span className="flex-shrink-0 w-5 h-5 rounded-full bg-red-500/20 flex items-center justify-center mr-3 mt-1">
-                          <X className="w-3 h-3 text-red-500" />
-                        </span>
-                        <span>{weakness}</span>
-                      </li>
-                    ))}
-                  </ul>
+          {/* ── Sections ── */}
+          <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+
+            {/* SWOT */}
+            <AnalysisCard>
+              <div style={{ padding: "28px" }}>
+                <SectionTitle icon={BadgeCheck} label="SWOT" title="Strengths & Weaknesses" />
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+                  {/* Strengths */}
+                  <div
+                    style={{
+                      padding: "18px 20px",
+                      borderRadius: "18px",
+                      background: "rgba(0,0,0,0.02)",
+                      border: "1px solid rgba(0,0,0,0.06)",
+                    }}
+                  >
+                    <p style={{ fontFamily: "'Inter', sans-serif", fontSize: "10.5px", fontWeight: 500, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--text-3)", marginBottom: "14px", display: "flex", alignItems: "center", gap: "6px" }}>
+                      <Check size={11} /> Strengths
+                    </p>
+                    <ul style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                      {analysis.strengthsWeaknesses.strengths.map((s, i) => (
+                        <li key={i} style={{ display: "flex", gap: "10px", alignItems: "flex-start" }}>
+                          <span style={{ flexShrink: 0, width: "18px", height: "18px", borderRadius: "50%", background: "rgba(0,0,0,0.06)", display: "flex", alignItems: "center", justifyContent: "center", marginTop: "1px" }}>
+                            <Check size={9} style={{ color: "var(--ink)" }} />
+                          </span>
+                          <span style={{ fontFamily: "'Inter', sans-serif", fontSize: "13px", fontWeight: 300, color: "var(--text-2)", lineHeight: 1.55 }}>{s}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+
+                  {/* Weaknesses */}
+                  <div
+                    style={{
+                      padding: "18px 20px",
+                      borderRadius: "18px",
+                      background: "rgba(0,0,0,0.02)",
+                      border: "1px solid rgba(0,0,0,0.06)",
+                    }}
+                  >
+                    <p style={{ fontFamily: "'Inter', sans-serif", fontSize: "10.5px", fontWeight: 500, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--text-3)", marginBottom: "14px", display: "flex", alignItems: "center", gap: "6px" }}>
+                      <X size={11} /> Weaknesses
+                    </p>
+                    <ul style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                      {analysis.strengthsWeaknesses.weaknesses.map((w, i) => (
+                        <li key={i} style={{ display: "flex", gap: "10px", alignItems: "flex-start" }}>
+                          <span style={{ flexShrink: 0, width: "18px", height: "18px", borderRadius: "50%", background: "rgba(0,0,0,0.06)", display: "flex", alignItems: "center", justifyContent: "center", marginTop: "1px" }}>
+                            <X size={9} style={{ color: "var(--text-2)" }} />
+                          </span>
+                          <span style={{ fontFamily: "'Inter', sans-serif", fontSize: "13px", fontWeight: 300, color: "var(--text-2)", lineHeight: 1.55 }}>{w}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
                 </div>
               </div>
-            </div>
+            </AnalysisCard>
 
-            {/* Market Analysis */}
-            <div className="bg-gray-900 rounded-xl p-6 shadow-lg">
-              <h2 className="text-2xl font-bold mb-6 flex items-center">
-                <TrendingUp className="w-6 h-6 mr-2 text-blue-500" />
-                Market Analysis
-              </h2>
-              <p className="text-gray-300 leading-relaxed">{analysis.marketAnalysis}</p>
-              
-              <div className="mt-6">
-                <h3 className="text-xl font-semibold mb-4">Competitors</h3>
-                <div className="grid gap-4 md:grid-cols-3">
-                  {analysis.competitorAnalysis.map((competitor, idx) => (
-                    <div key={idx} className="bg-gray-800 p-4 rounded-lg">
-                      <p>{competitor}</p>
-                    </div>
+            {/* Market */}
+            <AnalysisCard>
+              <div style={{ padding: "28px" }}>
+                <SectionTitle icon={TrendingUp} label="Market" title="Market Analysis" />
+                <p style={{ fontFamily: "'Inter', sans-serif", fontSize: "14px", fontWeight: 300, color: "var(--text-2)", lineHeight: 1.75, marginBottom: "20px" }}>
+                  {analysis.marketAnalysis}
+                </p>
+                <p style={{ fontFamily: "'Inter', sans-serif", fontSize: "10.5px", fontWeight: 500, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--text-3)", marginBottom: "12px" }}>
+                  Competitors
+                </p>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
+                  {analysis.competitorAnalysis.map((c, i) => (
+                    <span key={i} style={{ padding: "6px 14px", borderRadius: "100px", background: "rgba(0,0,0,0.04)", border: "1px solid rgba(0,0,0,0.07)", fontFamily: "'Inter', sans-serif", fontSize: "13px", fontWeight: 300, color: "var(--text-2)" }}>
+                      {c}
+                    </span>
                   ))}
                 </div>
               </div>
-            </div>
+            </AnalysisCard>
 
-            {/* Target Customer */}
-            <div className="bg-gray-900 rounded-xl p-6 shadow-lg">
-              <h2 className="text-2xl font-bold mb-6 flex items-center">
-                <Users className="w-6 h-6 mr-2 text-purple-500" />
-                Target Customer Profile
-              </h2>
-              <div className="grid md:grid-cols-2 gap-6">
-                <div>
-                  <h3 className="text-xl font-semibold mb-3">Demographics</h3>
-                  <p className="text-gray-300">{analysis.targetCustomer.demographics}</p>
-                  
-                  <h3 className="text-xl font-semibold mt-6 mb-3">Psychographics</h3>
-                  <p className="text-gray-300">{analysis.targetCustomer.psychographics}</p>
-                </div>
-                <div>
-                  <h3 className="text-xl font-semibold mb-4">Pain Points</h3>
-                  <ul className="space-y-3">
-                    {analysis.targetCustomer.painPoints.map((point, idx) => (
-                      <li key={idx} className="flex items-start">
-                        <span className="flex-shrink-0 w-5 h-5 rounded-full bg-purple-500/20 flex items-center justify-center mr-3 mt-1">
-                          <Target className="w-3 h-3 text-purple-500" />
-                        </span>
-                        <span>{point}</span>
-                      </li>
-                    ))}
-                  </ul>
+            {/* Target customer */}
+            <AnalysisCard>
+              <div style={{ padding: "28px" }}>
+                <SectionTitle icon={Users} label="Audience" title="Target Customer" />
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px" }}>
+                  <div>
+                    <p style={{ fontFamily: "'Inter', sans-serif", fontSize: "10.5px", fontWeight: 500, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--text-3)", marginBottom: "8px" }}>Demographics</p>
+                    <p style={{ fontFamily: "'Inter', sans-serif", fontSize: "13.5px", fontWeight: 300, color: "var(--text-2)", lineHeight: 1.65 }}>{analysis.targetCustomer.demographics}</p>
+                    <p style={{ fontFamily: "'Inter', sans-serif", fontSize: "10.5px", fontWeight: 500, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--text-3)", marginBottom: "8px", marginTop: "18px" }}>Psychographics</p>
+                    <p style={{ fontFamily: "'Inter', sans-serif", fontSize: "13.5px", fontWeight: 300, color: "var(--text-2)", lineHeight: 1.65 }}>{analysis.targetCustomer.psychographics}</p>
+                  </div>
+                  <div>
+                    <p style={{ fontFamily: "'Inter', sans-serif", fontSize: "10.5px", fontWeight: 500, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--text-3)", marginBottom: "12px" }}>Pain Points</p>
+                    <ul style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                      {analysis.targetCustomer.painPoints.map((pt, i) => (
+                        <li key={i} style={{ display: "flex", gap: "10px", alignItems: "flex-start" }}>
+                          <Target size={12} style={{ flexShrink: 0, color: "var(--text-3)", marginTop: "3px" }} />
+                          <span style={{ fontFamily: "'Inter', sans-serif", fontSize: "13px", fontWeight: 300, color: "var(--text-2)", lineHeight: 1.55 }}>{pt}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
                 </div>
               </div>
-            </div>
+            </AnalysisCard>
 
             {/* Roadmap */}
-            <div className="bg-gray-900 rounded-xl p-6 shadow-lg">
-              <h2 className="text-2xl font-bold mb-6 flex items-center">
-                <Clock className="w-6 h-6 mr-2 text-blue-400" />
-                Implementation Roadmap
-              </h2>
-              
-              <div className="relative mb-8">
-                {/* Timeline line */}
-                <div className="absolute left-4 top-0 bottom-0 w-0.5 bg-gray-700 z-0"></div>
-                
-                {/* Phase markers */}
-                <div className="space-y-10 relative">
+            <AnalysisCard>
+              <div style={{ padding: "28px" }}>
+                <SectionTitle icon={Clock} label="Roadmap" title="Implementation Roadmap" />
+                <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
                   {analysis.roadmap.map((phase, idx) => (
-                    <div key={idx} className={`relative z-10 pl-16 ${idx === currentPhase ? 'opacity-100' : 'opacity-70'}`}>
-                      {/* Marker */}
-                      <div 
-                        className={`absolute left-0 w-8 h-8 rounded-full flex items-center justify-center 
-                          ${idx === currentPhase 
-                            ? 'bg-blue-500 border-2 border-blue-400 ring-4 ring-blue-500/20'
-                            : idx < currentPhase 
-                              ? 'bg-green-500' 
-                              : 'bg-gray-700'}`}
-                        onClick={() => setCurrentPhase(idx)}
-                      >
-                        {idx < currentPhase ? (
-                          <Check className="w-4 h-4 text-white" />
-                        ) : (
-                          <span className="text-white font-bold">{idx + 1}</span>
-                        )}
-                      </div>
-                      
-                      <div className={`border rounded-lg p-5 transition-all ${
-                        idx === currentPhase 
-                          ? 'bg-gray-800 border-blue-500/50 shadow-[0_0_10px_rgba(59,130,246,0.2)]' 
-                          : 'bg-gray-800/70 border-gray-700'
-                      }`}>
-                        <div className="flex justify-between items-start mb-4">
-                          <h3 className="text-xl font-bold">{phase.phase}</h3>
-                          <span className="bg-gray-700 text-gray-300 px-2 py-1 rounded text-sm">
-                            {phase.timeframe}
+                    <button
+                      key={idx}
+                      onClick={() => setOpenPhase(idx === openPhase ? -1 : idx)}
+                      style={{
+                        width: "100%",
+                        textAlign: "left",
+                        padding: "18px 20px",
+                        borderRadius: "18px",
+                        background: idx === openPhase ? "var(--ink)" : "rgba(0,0,0,0.02)",
+                        border: `1px solid ${idx === openPhase ? "transparent" : "rgba(0,0,0,0.06)"}`,
+                        cursor: "pointer",
+                        transition: "all 0.25s ease",
+                      }}
+                    >
+                      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: idx === openPhase ? "14px" : "0" }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                          <span
+                            style={{
+                              width: "26px",
+                              height: "26px",
+                              borderRadius: "8px",
+                              background: idx === openPhase ? "rgba(255,255,255,0.12)" : "rgba(0,0,0,0.06)",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              fontFamily: "'Playfair Display', Georgia, serif",
+                              fontWeight: 800,
+                              fontSize: "14px",
+                              color: idx === openPhase ? "rgba(255,255,255,0.85)" : "var(--text-3)",
+                              
+                              flexShrink: 0,
+                            }}
+                          >
+                            {idx + 1}
+                          </span>
+                          <span style={{ fontFamily: "'Inter', sans-serif", fontSize: "14px", fontWeight: 500, color: idx === openPhase ? "#fff" : "var(--text-1)" }}>
+                            {phase.phase}
                           </span>
                         </div>
-                        <ul className="space-y-2">
-                          {phase.tasks.map((task, taskIdx) => (
-                            <li key={taskIdx} className="flex items-start">
-                              <span className="flex-shrink-0 w-5 h-5 rounded-full bg-blue-500/20 flex items-center justify-center mr-3 mt-1">
-                                <span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
-                              </span>
-                              <span>{task}</span>
+                        <span style={{ fontFamily: "'Inter', sans-serif", fontSize: "11px", fontWeight: 300, color: idx === openPhase ? "rgba(255,255,255,0.45)" : "var(--text-3)", letterSpacing: "0.03em" }}>
+                          {phase.timeframe}
+                        </span>
+                      </div>
+                      {idx === openPhase && (
+                        <ul style={{ paddingLeft: "38px", display: "flex", flexDirection: "column", gap: "8px" }}>
+                          {phase.tasks.map((task, ti) => (
+                            <li key={ti} style={{ display: "flex", alignItems: "flex-start", gap: "8px" }}>
+                              <span style={{ width: "5px", height: "5px", borderRadius: "50%", background: "rgba(255,255,255,0.3)", flexShrink: 0, marginTop: "6px" }} />
+                              <span style={{ fontFamily: "'Inter', sans-serif", fontSize: "13px", fontWeight: 300, color: "rgba(255,255,255,0.65)", lineHeight: 1.55 }}>{task}</span>
                             </li>
                           ))}
                         </ul>
-                      </div>
-                    </div>
+                      )}
+                    </button>
                   ))}
                 </div>
               </div>
-            </div>
+            </AnalysisCard>
 
-            {/* Financial Projections */}
-            <div className="bg-gray-900 rounded-xl p-6 shadow-lg">
-              <h2 className="text-2xl font-bold mb-6 flex items-center">
-                <BarChart3 className="w-6 h-6 mr-2 text-green-500" />
-                Financial Projections
-              </h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="bg-gray-800 p-5 rounded-lg">
-                  <h3 className="text-xl font-semibold mb-3">Initial Investment</h3>
-                  <p className="text-2xl font-bold text-green-400">{analysis.financialProjections.initialInvestment}</p>
-                </div>
-                <div className="bg-gray-800 p-5 rounded-lg">
-                  <h3 className="text-xl font-semibold mb-3">Breakeven Point</h3>
-                  <p className="text-2xl font-bold text-blue-400">{analysis.financialProjections.breakevenPoint}</p>
-                </div>
-              </div>
-              
-              <div className="mt-6">
-                <h3 className="text-xl font-semibold mb-4">Revenue Streams</h3>
-                <div className="grid gap-4 md:grid-cols-3">
-                  {analysis.financialProjections.revenueStreams.map((stream, idx) => (
-                    <div key={idx} className="bg-gray-800 p-4 rounded-lg">
-                      <p>{stream}</p>
+            {/* Financials */}
+            <AnalysisCard>
+              <div style={{ padding: "28px" }}>
+                <SectionTitle icon={BarChart3} label="Financials" title="Financial Projections" />
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px", marginBottom: "20px" }}>
+                  {[
+                    { label: "Initial Investment", value: analysis.financialProjections.initialInvestment },
+                    { label: "Breakeven Point",    value: analysis.financialProjections.breakevenPoint },
+                  ].map((stat) => (
+                    <div key={stat.label} style={{ padding: "20px", borderRadius: "18px", background: "rgba(0,0,0,0.03)", border: "1px solid rgba(0,0,0,0.06)" }}>
+                      <p style={{ fontFamily: "'Inter', sans-serif", fontSize: "10.5px", fontWeight: 500, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--text-3)", marginBottom: "8px" }}>{stat.label}</p>
+                      <p style={{ fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 800, fontSize: "2rem", color: "var(--ink)", letterSpacing: "-0.04em", lineHeight: 1, fontOpticalSizing: "auto" }}>{stat.value}</p>
                     </div>
                   ))}
                 </div>
+                <p style={{ fontFamily: "'Inter', sans-serif", fontSize: "10.5px", fontWeight: 500, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--text-3)", marginBottom: "12px" }}>
+                  Revenue Streams
+                </p>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
+                  {analysis.financialProjections.revenueStreams.map((stream, i) => (
+                    <span key={i} style={{ padding: "7px 16px", borderRadius: "100px", background: "rgba(0,0,0,0.04)", border: "1px solid rgba(0,0,0,0.07)", fontFamily: "'Inter', sans-serif", fontSize: "13px", fontWeight: 300, color: "var(--text-2)" }}>
+                      {stream}
+                    </span>
+                  ))}
+                </div>
               </div>
-            </div>
+            </AnalysisCard>
 
-            <div className="flex justify-center pt-6">
-              <Button 
-                onClick={handleContinue}
-                className="bg-white text-black hover:bg-gray-200 px-8 py-6 text-lg"
-              >
+            {/* CTA */}
+            <div style={{ display: "flex", justifyContent: "center", paddingTop: "8px" }}>
+              <button onClick={() => navigate("/results")} className="btn-dark" style={{ padding: "14px 32px" }}>
                 Continue to Detailed Roadmap
-                <ArrowRightIcon className="ml-2 h-5 w-5" />
-              </Button>
+                <ArrowRight size={14} />
+              </button>
             </div>
           </div>
         </div>

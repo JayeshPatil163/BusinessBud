@@ -142,13 +142,13 @@ export const generateBusinessAnalysis = async (idea: BusinessIdea): Promise<Anal
     // Parse the response into structured data
     return parseGrokResponse(generatedText, idea);
   } catch (error) {
-    console.error("Error generating business analysis with Grok API:", error);
+    console.error("Error generating business analysis with Grok API, activating skeleton fallback:", error);
     toast({
-      variant: "destructive",
-      title: "Analysis failed",
-      description: error instanceof Error ? error.message : "Unable to generate business analysis. Please check your Grok API configuration and try again.",
+      title: "Notice: Skeleton Fallback Activated",
+      description: "API call encountered an issue or rate limit. Loading customized skeleton assessment.",
     });
-    throw error;
+    // Fallback mechanism: return structured skeleton if API call fails
+    return parseGrokResponse("", idea);
   }
 };
 

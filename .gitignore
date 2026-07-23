@@ -23,4 +23,21 @@ dist-ssr
 *.sln
 *.sw?
 .vercel
+# Environment variables and secrets
 .env
+.env.*
+!.env.example
+*.local
+
+# Security & Private keys
+*.pem
+*.key
+*.cert
+*.crt
+*.p12
+*.pfx
+id_rsa*
+secrets.*
+credentials.*
+*.private.*
+

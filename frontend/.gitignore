@@ -11,6 +11,9 @@ node_modules
 dist
 dist-ssr
 *.local
+.env
+.env.*
+!.env.example
 
 # Editor directories and files
 .vscode/*
@@ -23,3 +26,8 @@ dist-ssr
 *.sln
 *.sw?
 .vercel
+
+# Backend
+backend/.env
+backend/dist
+backend/node_modules

@@ -1,5 +1,7 @@
 import { useState } from "react";
 import { X, Eye, EyeOff } from "lucide-react";
+import { useAuth } from "@/context/AuthContext";
+import { toast } from "@/components/ui/use-toast";
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -13,24 +15,45 @@ const AuthModal = ({ isOpen, onClose, initialMode = "signup" }: AuthModalProps) 
   const [email, setEmail]         = useState("");
   const [password, setPassword]   = useState("");
   const [name, setName]           = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const { login, register } = useAuth();
 
   if (!isOpen) return null;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // TODO: Wire to authentication provider (Supabase / Firebase / Clerk)
-    // Example Supabase:
-    //   if (mode === "signup") await supabase.auth.signUp({ email, password, options: { data: { full_name: name } } })
-    //   else await supabase.auth.signInWithPassword({ email, password })
-    console.log("Auth submit — provider not yet wired");
-    onClose();
+    setIsSubmitting(true);
+    try {
+      if (mode === "signup") {
+        await register(email, name || email.split("@")[0], password);
+        toast({
+          title: "Account created!",
+          description: "Welcome to BusinessBud.",
+        });
+      } else {
+        await login(email, password);
+        toast({
+          title: "Welcome back!",
+          description: "Signed in successfully.",
+        });
+      }
+      onClose();
+    } catch (err) {
+      toast({
+        variant: "destructive",
+        title: "Authentication failed",
+        description: err instanceof Error ? err.message : "Please check your credentials and try again.",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleGoogle = () => {
-    // TODO: Wire Google OAuth provider
-    //   await supabase.auth.signInWithOAuth({ provider: 'google' })
-    console.log("Google OAuth — provider not yet wired");
+    window.location.href = "/api/auth/google";
   };
+
 
   return (
     /* Backdrop */
@@ -256,18 +279,19 @@ const AuthModal = ({ isOpen, onClose, initialMode = "signup" }: AuthModalProps) 
 
           <button
             type="submit"
+            disabled={isSubmitting}
             style={{
               marginTop: "4px",
               width: "100%",
               padding: "13px",
               borderRadius: "16px",
-              background: "var(--ink)",
+              background: isSubmitting ? "var(--text-3)" : "var(--ink)",
               color: "#fff",
               fontFamily: "'Inter', sans-serif",
               fontSize: "13.5px",
               fontWeight: 500,
               border: "none",
-              cursor: "pointer",
+              cursor: isSubmitting ? "not-allowed" : "pointer",
               transition: "all 0.2s",
               display: "flex",
               alignItems: "center",
@@ -275,15 +299,19 @@ const AuthModal = ({ isOpen, onClose, initialMode = "signup" }: AuthModalProps) 
               gap: "8px",
             }}
             onMouseEnter={(e) => {
-              (e.currentTarget as HTMLButtonElement).style.background = "var(--ink-2)";
-              (e.currentTarget as HTMLButtonElement).style.transform = "translateY(-1px)";
+              if (!isSubmitting) {
+                (e.currentTarget as HTMLButtonElement).style.background = "var(--ink-2)";
+                (e.currentTarget as HTMLButtonElement).style.transform = "translateY(-1px)";
+              }
             }}
             onMouseLeave={(e) => {
-              (e.currentTarget as HTMLButtonElement).style.background = "var(--ink)";
-              (e.currentTarget as HTMLButtonElement).style.transform = "translateY(0)";
+              if (!isSubmitting) {
+                (e.currentTarget as HTMLButtonElement).style.background = "var(--ink)";
+                (e.currentTarget as HTMLButtonElement).style.transform = "translateY(0)";
+              }
             }}
           >
-            {mode === "signup" ? "Create Account" : "Sign In"}
+            {isSubmitting ? "Please wait..." : (mode === "signup" ? "Create Account" : "Sign In")}
             <svg width="13" height="13" viewBox="0 0 14 14" fill="none">
               <path d="M2 7h10M8 3l4 4-4 4" stroke="white" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>

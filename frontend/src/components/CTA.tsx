@@ -1,11 +1,31 @@
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowRight } from "lucide-react";
+import { useAuth } from "@/context/AuthContext";
+import AuthModal from "./AuthModal";
 
 const DISPLAY = "'Playfair Display', Georgia, serif";
 const BODY    = "'Inter', -apple-system, sans-serif";
 
 const CTA = () => {
   const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
+  const [authOpen, setAuthOpen] = useState(false);
+
+  const handleEvaluate = () => {
+    if (isAuthenticated) {
+      navigate("/start");
+    } else {
+      setAuthOpen(true);
+    }
+  };
+
+  useEffect(() => {
+    if (authOpen && isAuthenticated) {
+      setAuthOpen(false);
+      navigate("/start");
+    }
+  }, [authOpen, isAuthenticated, navigate]);
 
   return (
     <section className="py-24 px-6" style={{ background: "var(--cream)" }}>
@@ -99,7 +119,7 @@ const CTA = () => {
 
             <div className="flex flex-col sm:flex-row gap-3">
               <button
-                onClick={() => navigate("/start")}
+                onClick={handleEvaluate}
                 style={{
                   display: "inline-flex",
                   alignItems: "center",
@@ -162,6 +182,12 @@ const CTA = () => {
           </div>
         </div>
       </div>
+
+      <AuthModal
+        isOpen={authOpen}
+        onClose={() => setAuthOpen(false)}
+        initialMode="signup"
+      />
     </section>
   );
 };

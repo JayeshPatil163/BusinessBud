@@ -6,6 +6,7 @@ import React, {
   useCallback,
   ReactNode,
 } from "react";
+import { getApiUrl } from "@/config/api";
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -36,8 +37,6 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
-const API_BASE = "/api";
-
 // ── Provider ───────────────────────────────────────────────────────────────
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
@@ -53,7 +52,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
    */
   const refreshAuth = useCallback(async (): Promise<boolean> => {
     try {
-      const res = await fetch(`${API_BASE}/auth/refresh`, {
+      const res = await fetch(getApiUrl("/auth/refresh"), {
         method: "POST",
         credentials: "include", // sends the httpOnly cookie
       });
@@ -67,7 +66,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setAccessToken(newToken);
 
       // Fetch user profile
-      const userRes = await fetch(`${API_BASE}/auth/me`, {
+      const userRes = await fetch(getApiUrl("/auth/me"), {
         headers: { Authorization: `Bearer ${newToken}` },
         credentials: "include",
       });
@@ -88,7 +87,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, [refreshAuth]);
 
   const login = async (email: string, password: string): Promise<void> => {
-    const res = await fetch(`${API_BASE}/auth/login`, {
+    const res = await fetch(getApiUrl("/auth/login"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       credentials: "include",
@@ -110,7 +109,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     username: string,
     password: string
   ): Promise<void> => {
-    const res = await fetch(`${API_BASE}/auth/register`, {
+    const res = await fetch(getApiUrl("/auth/register"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       credentials: "include",
@@ -133,7 +132,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const logout = async (): Promise<void> => {
     try {
-      await fetch(`${API_BASE}/auth/logout`, {
+      await fetch(getApiUrl("/auth/logout"), {
         method: "POST",
         credentials: "include",
       });

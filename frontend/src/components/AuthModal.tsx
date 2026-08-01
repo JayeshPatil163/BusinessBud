@@ -2,6 +2,7 @@ import { useState } from "react";
 import { X, Eye, EyeOff } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { toast } from "@/components/ui/use-toast";
+import { getApiUrl } from "@/config/api";
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -51,7 +52,7 @@ const AuthModal = ({ isOpen, onClose, initialMode = "signup" }: AuthModalProps) 
   };
 
   const handleGoogle = () => {
-    window.location.href = "/api/auth/google";
+    window.location.href = getApiUrl("/auth/google");
   };
 
 

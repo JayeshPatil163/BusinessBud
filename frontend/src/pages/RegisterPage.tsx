@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { toast } from "@/components/ui/use-toast";
 import { Lightbulb, Mail, Lock, User, Eye, EyeOff, ArrowRight, Check, X } from "lucide-react";
+import { getApiUrl } from "@/config/api";
 
 interface PasswordStrength {
   length: boolean;
@@ -88,7 +89,7 @@ const RegisterPage = () => {
   };
 
   const handleGoogleRegister = () => {
-    window.location.href = "/api/auth/google";
+    window.location.href = getApiUrl("/auth/google");
   };
 
   const strengthScore = getStrengthScore(strength);

@@ -209,7 +209,7 @@ export const googleCallback = async (
     };
 
     if (!user) {
-      res.redirect(`${env.frontendUrl}/login?error=oauth_failed`);
+      res.redirect(`${env.frontendUrl}/?error=oauth_failed`);
       return;
     }
 

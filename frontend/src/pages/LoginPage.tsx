@@ -3,6 +3,7 @@ import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { toast } from "@/components/ui/use-toast";
 import { Lightbulb, Mail, Lock, Eye, EyeOff, ArrowRight } from "lucide-react";
+import { getApiUrl } from "@/config/api";
 
 const LoginPage = () => {
   const { login, isAuthenticated, isLoading } = useAuth();
@@ -68,7 +69,7 @@ const LoginPage = () => {
   };
 
   const handleGoogleLogin = () => {
-    window.location.href = "/api/auth/google";
+    window.location.href = getApiUrl("/auth/google");
   };
 
   return (

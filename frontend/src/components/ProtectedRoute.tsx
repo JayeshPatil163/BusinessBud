@@ -8,7 +8,7 @@ interface ProtectedRouteProps {
 /**
  * Wraps a route to require authentication.
  * Shows a loading spinner while session is being restored,
- * then redirects to /login if unauthenticated (preserving return URL).
+ * then redirects to / if unauthenticated.
  */
 const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
   const { isAuthenticated, isLoading } = useAuth();
@@ -32,7 +32,7 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
 
   if (!isAuthenticated) {
     return (
-      <Navigate to="/login" state={{ from: location.pathname }} replace />
+      <Navigate to="/" replace />
     );
   }
 

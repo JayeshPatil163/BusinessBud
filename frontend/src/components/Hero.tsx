@@ -1,11 +1,31 @@
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowRight } from "lucide-react";
+import { useAuth } from "@/context/AuthContext";
+import AuthModal from "./AuthModal";
 
 const DISPLAY = "'Playfair Display', Georgia, serif";
 const BODY    = "'Inter', -apple-system, sans-serif";
 
 const Hero = () => {
   const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
+  const [authOpen, setAuthOpen] = useState(false);
+
+  const handleEvaluate = () => {
+    if (isAuthenticated) {
+      navigate("/start");
+    } else {
+      setAuthOpen(true);
+    }
+  };
+
+  useEffect(() => {
+    if (authOpen && isAuthenticated) {
+      setAuthOpen(false);
+      navigate("/start");
+    }
+  }, [authOpen, isAuthenticated, navigate]);
 
   const scrollTo = (id: string) => {
     document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
@@ -68,11 +88,6 @@ const Hero = () => {
           </span>
         </div>
 
-        {/* ── Main headline ──
-            Rule: Playfair Display for the display headline ONLY.
-            The italic accent word "idea" uses Playfair Bold Italic — thick, rich, not thin.
-            Every other word is Playfair 700 normal.
-        */}
         <h1
           className="animate-fade-up delay-100"
           style={{
@@ -115,14 +130,14 @@ const Hero = () => {
             maxWidth: "430px",
           }}
         >
-          BusinessBud evaluates your idea with AI — market fit, competitors,
-          execution roadmap, financial projections — in minutes, not months.
+          BusinessBud evaluates your idea with AI - market fit, competitors,
+          execution roadmap, financial projections - in minutes, not months.
         </p>
 
         {/* CTAs */}
         <div className="flex flex-col sm:flex-row items-center justify-center gap-3 animate-fade-up delay-300">
           <button
-            onClick={() => navigate("/start")}
+            onClick={handleEvaluate}
             className="btn-dark"
             style={{ padding: "14px 30px", fontSize: "13.5px" }}
           >
@@ -196,6 +211,12 @@ const Hero = () => {
           style={{ background: "linear-gradient(to bottom, var(--text-3), transparent)" }}
         />
       </div>
+
+      <AuthModal
+        isOpen={authOpen}
+        onClose={() => setAuthOpen(false)}
+        initialMode="signup"
+      />
     </section>
   );
 };

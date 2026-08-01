@@ -35,7 +35,7 @@ const AuthCallback = () => {
 
       initFromToken();
     } else {
-      navigate("/login?error=oauth_failed", { replace: true });
+      navigate("/?error=oauth_failed", { replace: true });
     }
   }, [params, navigate, refreshAuth]);
 

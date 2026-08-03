@@ -16,7 +16,7 @@ app.use(helmet());
 // ── CORS ──────────────────────────────────────────────────────────────────
 app.use(
   cors({
-    origin: [env.frontendUrl, "http://localhost:5173", "http://localhost:8080"],
+    origin: [env.frontendUrl, "http://localhost:5173", "http://localhost:8080","https://business-bud.vercel.app/"],
     credentials: true, // Required for cookies
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],

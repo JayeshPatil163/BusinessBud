@@ -36,9 +36,9 @@ const REFRESH_COOKIE = "refresh_token";
 const setRefreshTokenCookie = (res: Response, token: string): void => {
   res.cookie(REFRESH_COOKIE, token, {
     httpOnly: true,
-    secure: env.isProduction,
-    sameSite: env.isProduction ? "strict" : "lax",
-    maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days in ms
+    secure: true,
+    sameSite: "none",
+    maxAge: 7 * 24 * 60 * 60 * 1000,
     path: "/api/auth",
   });
 };
